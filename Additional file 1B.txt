@@ -1,0 +1,6 @@
+         Eskilstuna Falun Gavle Norrkoping Stockholm Uppsala Vasteras Orebro 
+Arboga         45   165   195     110       156       129      52      40 
+Fagersta       95    88   126     187       176       117      66     103
+Ludvika       137    63   150     220       222       163     112     112
+Nykoping       82   260   257      59       106       168     128     135 
+
