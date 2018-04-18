@@ -1,0 +1,562 @@
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1  sets
+   2     i   plant    /Arboga, Fagersta, Ludvika, Nykoping/
+   3     j   factory       /Eskilstuna, Falun, Gavle, Norrkoping, Stockholm, Uppsala, Vasteras, Orebro/;
+   4   
+   5  table  dist(i,j)   distance in kilometers from factory j to plant i
+   6           Eskilstuna Falun Gavle Norrkoping Stockholm Uppsala Vasteras Orebro
+   7  Arboga         45   165   195     110       156       129      52      40
+   8  Fagersta       95    88   126     187       176       117      66     103
+   9  Ludvika       137    63   150     220       222       163     112     112
+  10  Nykoping       82   260   257      59       106       168     128     135     ;
+  11   
+  12  parameters
+  13      dem(j)   demand of factory j in kilos
+  14      /Eskilstuna        2000
+  15       Falun             2000
+  16       Gavle             4000
+  17       Norrkoping        3000
+  18       Stockholm         9000
+  19       Uppsala           6000
+  20       Vasteras          3000
+  21       Orebro            2000 /;
+  22   
+  23  parameters
+  24      ca(i)     destruction capacity of plant i in kilos
+  25      /Arboga           7000
+  26       Fagersta         8000
+  27       Ludvika          9000
+  28       Nykoping         8000/  ;
+  29   
+  30  scalar c0 original transportation cost per kilo per kilometer in kr /1/;
+  31   
+  32  scalar c1 increased transportation cost per kilo per kilometer in kr /1.4/;
+  33   
+  34  scalar inc income of service a kilo of the waste in kronors /250/;
+  35   
+  36  scalar dec cost of destructing a kilo of the waste in kronors /100/;
+  37   
+  38  scalar exc additional cost in excess of the nominal capacities in kr /100/;
+  39   
+  40   
+  41   
+  42  variables  x(i,j)      waste lighter than upper limit
+  43             e(i,j)      overparts of waste transported from factory j to plant i
+  44             ex(i)       waste beyond destruction capacity
+  45             z           totalprofit;
+  46   
+  47  x.up(i,j) = 1500;
+  48  x.lo(i,j) = 0;
+  49   
+  50  positive variable            e,ex;
+  51   
+  52  equations
+  53      satdem(j)    fullfillment of the waste to be handled
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+  54      capac(i)     donnot exceed capacities
+  55      totalprofit     totalprofit;
+  56   
+  57  satdem(j)  .. sum(i,x(i,j)+e(i,j)) =g= dem(j);
+  58   
+  59  capac(i)  .. sum(j,x(i,j)+e(i,j)) =l= ca(i)+ex(i);
+  60   
+  61  totalprofit  .. z =e= sum(j,dem(j))*(inc-dec)-sum((i,j),dist(i,j)*(c0*x(i,j)+c1*e(i,j)))-exc*sum(i,ex(i));
+  62   
+  63   
+  64   
+  65  model project1_1 /all/;
+  66   
+  67  file emp / '/home/hannah/Documents/gams-ex/project1/225a/empinfo.dat' /; put emp '* problem /home/hannah/Documents/gams-ex/project1/project1_advanced.gms'/;
+  68  $onput
+  69  randvar dem('Eskilstuna') normal 2000 50
+  70  randvar dem('Falun') normal 2000 50
+  71  randvar dem('Gavle') normal 4000 50
+  72  randvar dem('Norrkoping') normal 3000 50
+  73  randvar dem('Stockholm') normal 9000 50
+  74  randvar dem('Uppsala') normal 6000 50
+  75  randvar dem('Vasteras') normal 3000 50
+  76  randvar dem('Orebro') normal 2000 50
+  77  stage 2 dem e ex
+  78  stage 2 satdem capac
+  79  $offput
+  80  putclose emp;
+  81   
+  82  Set scen      scenarios / s1*s100 /;
+  83   
+  84  Parameter
+  85   s_dem(scen,j) demand realization by scenario
+  86   s_e(scen,i,j) extra shipment per scenario
+  87   s_s(scen) scenarios
+  88   s_ex(scen,i) extra waste to destruction per scenario;
+  89   
+  90  Set dict / scen .scenario.''
+  91   dem .randvar .s_dem
+  92   e .level .s_e
+  93   ex .level .s_ex/;
+  94   
+  95  Option emp = lindo
+  96   
+  97  Solve project1_1 using emp maximizing z scenario dict;
+  98   
+  99  Display s_dem,s_e,s_ex,x.l,z.l;
+ 100   
+ 101   
+
+
+COMPILATION TIME     =        0.001 SECONDS      3 MB  25.0.1 r65189 LEX-LEG
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE project1_1 Using EMP From line 97
+
+
+---- satdem  =G=  fullfillment of the waste to be handled
+
+satdem(Eskilstuna)..  x(Arboga,Eskilstuna) + x(Fagersta,Eskilstuna) + x(Ludvika,Eskilstuna) + x(Nykoping,Eskilstuna) + e(Arboga,Eskilstuna) + e(Fagersta,Eskilstuna) + e(Ludvika,Eskilstuna) + e(Nykoping,Eskilstuna) - dem_var(Eskilstuna) =G= 0 ;
+     
+      (LHS = -2000, INFES = 2000 ****)
+     
+satdem(Falun)..  x(Arboga,Falun) + x(Fagersta,Falun) + x(Ludvika,Falun) + x(Nykoping,Falun) + e(Arboga,Falun) + e(Fagersta,Falun) + e(Ludvika,Falun) + e(Nykoping,Falun) - dem_var(Falun) =G= 0 ; (LHS = -2000, INFES = 2000 ****)
+     
+satdem(Gavle)..  x(Arboga,Gavle) + x(Fagersta,Gavle) + x(Ludvika,Gavle) + x(Nykoping,Gavle) + e(Arboga,Gavle) + e(Fagersta,Gavle) + e(Ludvika,Gavle) + e(Nykoping,Gavle) - dem_var(Gavle) =G= 0 ; (LHS = -4000, INFES = 4000 ****)
+     
+REMAINING 5 ENTRIES SKIPPED
+
+
+---- capac  =L=  donnot exceed capacities
+
+capac(Arboga)..  x(Arboga,Eskilstuna) + x(Arboga,Falun) + x(Arboga,Gavle) + x(Arboga,Norrkoping) + x(Arboga,Stockholm) + x(Arboga,Uppsala) + x(Arboga,Vasteras) + x(Arboga,Orebro) + e(Arboga,Eskilstuna) + e(Arboga,Falun) + e(Arboga,Gavle)
+     
+      + e(Arboga,Norrkoping) + e(Arboga,Stockholm) + e(Arboga,Uppsala) + e(Arboga,Vasteras) + e(Arboga,Orebro) - ex(Arboga) =L= 7000 ; (LHS = 0)
+     
+capac(Fagersta)..  x(Fagersta,Eskilstuna) + x(Fagersta,Falun) + x(Fagersta,Gavle) + x(Fagersta,Norrkoping) + x(Fagersta,Stockholm) + x(Fagersta,Uppsala) + x(Fagersta,Vasteras) + x(Fagersta,Orebro) + e(Fagersta,Eskilstuna) + e(Fagersta,Falun)
+     
+      + e(Fagersta,Gavle) + e(Fagersta,Norrkoping) + e(Fagersta,Stockholm) + e(Fagersta,Uppsala) + e(Fagersta,Vasteras) + e(Fagersta,Orebro) - ex(Fagersta) =L= 8000 ; (LHS = 0)
+     
+capac(Ludvika)..  x(Ludvika,Eskilstuna) + x(Ludvika,Falun) + x(Ludvika,Gavle) + x(Ludvika,Norrkoping) + x(Ludvika,Stockholm) + x(Ludvika,Uppsala) + x(Ludvika,Vasteras) + x(Ludvika,Orebro) + e(Ludvika,Eskilstuna) + e(Ludvika,Falun) + e(Ludvika,Gavle)
+     
+      + e(Ludvika,Norrkoping) + e(Ludvika,Stockholm) + e(Ludvika,Uppsala) + e(Ludvika,Vasteras) + e(Ludvika,Orebro) - ex(Ludvika) =L= 9000 ; (LHS = 0)
+     
+REMAINING ENTRY SKIPPED
+
+
+---- totalprofit  =E=  totalprofit
+
+totalprofit..  45*x(Arboga,Eskilstuna) + 165*x(Arboga,Falun) + 195*x(Arboga,Gavle) + 110*x(Arboga,Norrkoping) + 156*x(Arboga,Stockholm) + 129*x(Arboga,Uppsala) + 52*x(Arboga,Vasteras) + 40*x(Arboga,Orebro) + 95*x(Fagersta,Eskilstuna)
+     
+      + 88*x(Fagersta,Falun) + 126*x(Fagersta,Gavle) + 187*x(Fagersta,Norrkoping) + 176*x(Fagersta,Stockholm) + 117*x(Fagersta,Uppsala) + 66*x(Fagersta,Vasteras) + 103*x(Fagersta,Orebro) + 137*x(Ludvika,Eskilstuna) + 63*x(Ludvika,Falun)
+     
+      + 150*x(Ludvika,Gavle) + 220*x(Ludvika,Norrkoping) + 222*x(Ludvika,Stockholm) + 163*x(Ludvika,Uppsala) + 112*x(Ludvika,Vasteras) + 112*x(Ludvika,Orebro) + 82*x(Nykoping,Eskilstuna) + 260*x(Nykoping,Falun) + 257*x(Nykoping,Gavle)
+     
+      + 59*x(Nykoping,Norrkoping) + 106*x(Nykoping,Stockholm) + 168*x(Nykoping,Uppsala) + 128*x(Nykoping,Vasteras) + 135*x(Nykoping,Orebro) + 63*e(Arboga,Eskilstuna) + 231*e(Arboga,Falun) + 273*e(Arboga,Gavle) + 154*e(Arboga,Norrkoping)
+     
+      + 218.4*e(Arboga,Stockholm) + 180.6*e(Arboga,Uppsala) + 72.8*e(Arboga,Vasteras) + 56*e(Arboga,Orebro) + 133*e(Fagersta,Eskilstuna) + 123.2*e(Fagersta,Falun) + 176.4*e(Fagersta,Gavle) + 261.8*e(Fagersta,Norrkoping) + 246.4*e(Fagersta,Stockholm)
+     
+      + 163.8*e(Fagersta,Uppsala) + 92.4*e(Fagersta,Vasteras) + 144.2*e(Fagersta,Orebro) + 191.8*e(Ludvika,Eskilstuna) + 88.2*e(Ludvika,Falun) + 210*e(Ludvika,Gavle) + 308*e(Ludvika,Norrkoping) + 310.8*e(Ludvika,Stockholm) + 228.2*e(Ludvika,Uppsala)
+     
+      + 156.8*e(Ludvika,Vasteras) + 156.8*e(Ludvika,Orebro) + 114.8*e(Nykoping,Eskilstuna) + 364*e(Nykoping,Falun) + 359.8*e(Nykoping,Gavle) + 82.6*e(Nykoping,Norrkoping) + 148.4*e(Nykoping,Stockholm) + 235.2*e(Nykoping,Uppsala)
+     
+      + 179.2*e(Nykoping,Vasteras) + 189*e(Nykoping,Orebro) + 100*ex(Arboga) + 100*ex(Fagersta) + 100*ex(Ludvika) + 100*ex(Nykoping) + z - 150*dem_var(Eskilstuna) - 150*dem_var(Falun) - 150*dem_var(Gavle) - 150*dem_var(Norrkoping) - 150*dem_var(Stockholm)
+     
+      - 150*dem_var(Uppsala) - 150*dem_var(Vasteras) - 150*dem_var(Orebro) =E= 0 ; (LHS = -4650000, INFES = 4650000 ****)
+     
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE project1_1 Using EMP From line 97
+
+
+---- x  waste lighter than upper limit
+
+x(Arboga,Eskilstuna)
+                (.LO, .L, .UP, .M = 0, 0, 1500, 0)
+        1       satdem(Eskilstuna)
+        1       capac(Arboga)
+       45       totalprofit
+
+x(Arboga,Falun)
+                (.LO, .L, .UP, .M = 0, 0, 1500, 0)
+        1       satdem(Falun)
+        1       capac(Arboga)
+      165       totalprofit
+
+x(Arboga,Gavle)
+                (.LO, .L, .UP, .M = 0, 0, 1500, 0)
+        1       satdem(Gavle)
+        1       capac(Arboga)
+      195       totalprofit
+
+REMAINING 29 ENTRIES SKIPPED
+
+---- e  overparts of waste transported from factory j to plant i
+
+e(Arboga,Eskilstuna)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       satdem(Eskilstuna)
+        1       capac(Arboga)
+       63       totalprofit
+
+e(Arboga,Falun)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       satdem(Falun)
+        1       capac(Arboga)
+      231       totalprofit
+
+e(Arboga,Gavle)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       satdem(Gavle)
+        1       capac(Arboga)
+      273       totalprofit
+
+REMAINING 29 ENTRIES SKIPPED
+
+---- ex  waste beyond destruction capacity
+
+ex(Arboga)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       capac(Arboga)
+      100       totalprofit
+
+ex(Fagersta)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE project1_1 Using EMP From line 97
+
+
+     ex  waste beyond destruction capacity
+
+       -1       capac(Fagersta)
+      100       totalprofit
+
+ex(Ludvika)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       capac(Ludvika)
+      100       totalprofit
+
+REMAINING ENTRY SKIPPED
+
+---- z  totalprofit
+
+z
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       totalprofit
+
+
+---- dem_var  
+
+dem_var(Eskilstuna)
+                (.LO, .L, .UP, .M = -INF, 2000, +INF, 0)
+       -1       satdem(Eskilstuna)
+     -150       totalprofit
+
+dem_var(Falun)
+                (.LO, .L, .UP, .M = -INF, 2000, +INF, 0)
+       -1       satdem(Falun)
+     -150       totalprofit
+
+dem_var(Gavle)
+                (.LO, .L, .UP, .M = -INF, 4000, +INF, 0)
+       -1       satdem(Gavle)
+     -150       totalprofit
+
+REMAINING 5 ENTRIES SKIPPED
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE project1_1 Using EMP From line 97
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           3     SINGLE EQUATIONS           13
+BLOCKS OF VARIABLES           5     SINGLE VARIABLES           77
+NON ZERO ELEMENTS           217     NON LINEAR N-Z              0
+DERIVATIVE POOL              20     CONSTANT POOL              16
+CODE LENGTH                   0
+
+
+GENERATION TIME      =        0.053 SECONDS      4 MB  25.0.1 r65189 LEX-LEG
+
+
+EXECUTION TIME       =        0.073 SECONDS      4 MB  25.0.1 r65189 LEX-LEG
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 7
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE project1_1 Using EMP From line 97
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   project1_1          OBJECTIVE  z
+     TYPE    EMP                 DIRECTION  MAXIMIZE
+     SOLVER  LINDO               FROM LINE  97
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE           977958.9911
+
+ RESOURCE USAGE, LIMIT          0.085      1000.000
+ ITERATION COUNT, LIMIT       151    2000000000
+ EVALUATION ERRORS             NA             0
+--- Input model type identified and solved as LP
+
+LINDO            25.0.1 r65189 Released Jan 17, 2018 LEG x86 64bit/Linux      
+
+   LINDO Driver
+   Lindo Systems Inc, www.lindo.com
+
+*** Running without Lindo license, model size exceeds global demo limit
+*** Switching off global optimizer
+Lindo API version 11.0.3802.300 built on Nov  7 2017 16:11:23
+*** Saw parametric distribution, but no sample size was defined
+*** Will set STOC_NSAMPLE_STAGE to 6
+*** Set Lindo option STOC_NSAMPLE_STAGE, STOC_NSAMPLE_SPAR
+*** or STOC_NSAMPLE_PER_STAGE to change this default
+
+Solution      = 977958.991070445
+Best possible = 977958.991070445
+Absolute gap  = 0  (OptCA = 0)
+Relative gap  = 0.00000  (OptCR = 0.1)
+
+
+---- EQU satdem  fullfillment of the waste to be handled
+
+                  LOWER          LEVEL          UPPER         MARGINAL
+
+Eskilstuna          .              .            +INF          -20.5000      
+Falun               .              .            +INF          -14.7000      
+Gavle               .              .            +INF          -35.0000      
+Norrkoping          .              .            +INF          -26.0333      
+Stockholm           .              .            +INF          -37.0000      
+Uppsala             .              .            +INF          -32.9000      
+Vasteras            .              .            +INF          -18.6667      
+Orebro              .              .            +INF          -18.6667      
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 8
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE project1_1 Using EMP From line 97
+
+
+---- EQU capac  donnot exceed capacities
+
+                LOWER          LEVEL          UPPER         MARGINAL
+
+Arboga          -INF         7000.0000      7000.0000        10.0000      
+Fagersta        -INF         8000.0000      8000.0000         5.6000      
+Ludvika         -INF         7952.1934      9000.0000          .          
+Nykoping        -INF         7991.2597      8000.0000        12.2667      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU totalprof~          .              .              .             0.1667      
+
+  totalprofit  totalprofit
+
+---- VAR x  waste lighter than upper limit
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+Arboga  .Eskilstuna          .          1500.0000      1500.0000         3.0000      
+Arboga  .Falun               .              .          1500.0000       -22.8000      
+Arboga  .Gavle               .              .          1500.0000        -7.5000      
+Arboga  .Norrkoping          .              .          1500.0000        -2.3000      
+Arboga  .Stockholm           .          1500.0000      1500.0000         1.0000      
+Arboga  .Uppsala             .          1500.0000      1500.0000         1.4000      
+Arboga  .Vasteras            .           425.8082      1500.0000          .          
+Arboga  .Orebro              .          1500.0000      1500.0000         2.0000      
+Fagersta.Eskilstuna          .              .          1500.0000        -0.9333      
+Fagersta.Falun               .              .          1500.0000        -5.5667      
+Fagersta.Gavle               .          1500.0000      1500.0000         8.4000      
+Fagersta.Norrkoping          .              .          1500.0000       -10.7333      
+Fagersta.Stockholm           .          1500.0000      1500.0000         2.0667      
+Fagersta.Uppsala             .          1500.0000      1500.0000         7.8000      
+Fagersta.Vasteras            .          1500.0000      1500.0000         2.0667      
+Fagersta.Orebro              .              .          1500.0000        -4.1000      
+Ludvika .Eskilstuna          .              .          1500.0000        -2.3333      
+Ludvika .Falun               .          1500.0000      1500.0000         4.2000      
+Ludvika .Gavle               .          1500.0000      1500.0000        10.0000      
+Ludvika .Norrkoping          .              .          1500.0000       -10.6333      
+Ludvika .Stockholm           .           932.9016      1500.0000          .          
+Ludvika .Uppsala             .          1500.0000      1500.0000         5.7333      
+Ludvika .Vasteras            .          1020.1704      1500.0000          .          
+Ludvika .Orebro              .           451.4035      1500.0000          .          
+Nykoping.Eskilstuna          .              .          1500.0000        -5.4333      
+Nykoping.Falun               .              .          1500.0000       -40.9000      
+Nykoping.Gavle               .              .          1500.0000       -20.1000      
+Nykoping.Norrkoping          .          1500.0000      1500.0000         3.9333      
+Nykoping.Stockholm           .          1500.0000      1500.0000         7.0667      
+Nykoping.Uppsala             .              .          1500.0000        -7.3667      
+Nykoping.Vasteras            .              .          1500.0000       -14.9333      
+Nykoping.Orebro              .              .          1500.0000       -16.1000      
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                      02/14/18 22:13:15 Page 9
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE project1_1 Using EMP From line 97
+
+
+---- VAR e  overparts of waste transported from factory j to plant i
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+Arboga  .Eskilstuna          .           507.6964        +INF             .          
+Arboga  .Falun               .              .            +INF          -33.8000      
+Arboga  .Gavle               .              .            +INF          -20.5000      
+Arboga  .Norrkoping          .              .            +INF           -9.6333      
+Arboga  .Stockholm           .             5.4322        +INF           -9.4000      
+Arboga  .Uppsala             .             6.9649        +INF           -7.2000      
+Arboga  .Vasteras            .            22.1593        +INF           -3.4667      
+Arboga  .Orebro              .            49.2536        +INF           -0.6667      
+Fagersta.Eskilstuna          .              .            +INF           -7.2667      
+Fagersta.Falun               .              .            +INF          -11.4333      
+Fagersta.Gavle               .           460.2057        +INF             .          
+Fagersta.Norrkoping          .              .            +INF          -23.2000      
+Fagersta.Stockholm           .              .            +INF           -9.6667      
+Fagersta.Uppsala             .          1495.7580        +INF             .          
+Fagersta.Vasteras            .            44.0363        +INF           -2.3333      
+Fagersta.Orebro              .              .            +INF          -10.9667      
+Ludvika .Eskilstuna          .              .            +INF          -11.4667      
+Ludvika .Falun               .           505.2702        +INF             .          
+Ludvika .Gavle               .           542.4477        +INF             .          
+Ludvika .Norrkoping          .              .            +INF          -25.3000      
+Ludvika .Stockholm           .              .            +INF          -14.8000      
+Ludvika .Uppsala             .              .            +INF           -5.1333      
+Ludvika .Vasteras            .              .            +INF           -7.4667      
+Ludvika .Orebro              .              .            +INF           -7.4667      
+Nykoping.Eskilstuna          .              .            +INF          -10.9000      
+Nykoping.Falun               .              .            +INF          -58.2333      
+Nykoping.Gavle               .              .            +INF          -37.2333      
+Nykoping.Norrkoping          .          1493.2659        +INF             .          
+Nykoping.Stockholm           .          3562.8558        +INF             .          
+Nykoping.Uppsala             .              .            +INF          -18.5667      
+Nykoping.Vasteras            .              .            +INF          -23.4667      
+Nykoping.Orebro              .              .            +INF          -25.1000      
+
+---- VAR ex  waste beyond destruction capacity
+
+                LOWER          LEVEL          UPPER         MARGINAL
+
+Arboga            .            17.3145        +INF           -6.6667      
+Fagersta          .              .            +INF          -11.0667      
+Ludvika           .              .            +INF          -16.6667      
+Nykoping          .            64.8621        +INF           -4.4000      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR z                 -INF       977958.9911        +INF             .          
+
+  z  totalprofit
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                     02/14/18 22:13:15 Page 10
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE project1_1 Using EMP From line 97
+
+
+---- VAR dem_var  
+
+                  LOWER          LEVEL          UPPER         MARGINAL
+
+Eskilstuna        -INF         2007.6964        +INF             .          
+Falun             -INF         2005.2702        +INF             .          
+Gavle             -INF         4002.6534        +INF             .          
+Norrkoping        -INF         2993.2659        +INF             .          
+Stockholm         -INF         9001.1896        +INF             .          
+Uppsala           -INF         6002.7229        +INF             .          
+Vasteras          -INF         3012.1741        +INF             .          
+Orebro            -INF         2000.6570        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                             5  PROJECTED
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                     02/14/18 22:13:15 Page 11
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     99 PARAMETER s_dem  demand realization by scenario
+
+    Eskilstuna       Falun       Gavle  Norrkoping   Stockholm     Uppsala    Vasteras      Orebro
+
+s1    1937.889    2095.150    4023.030    2982.849    8982.645    5971.305    3042.314    1951.403
+s2    2031.610    1976.760    4008.137    2907.195    8973.265    6054.439    2945.979    1959.570
+s3    2015.614    2040.468    3989.327    3067.754    9039.785    6012.173    2963.727    2030.553
+s4    2088.615    1987.199    4092.278    2974.932    9014.849    5999.535    2990.852    2020.296
+s5    1973.333    1931.234    3958.781    3026.230    8906.671    6028.651    3118.075    2052.262
+s6    1999.117    2000.810    3944.368    3000.635    9089.922    5950.235    3012.099    1989.857
+
+
+----     99 PARAMETER s_e  extra shipment per scenario
+
+             Eskilstuna       Falun       Gavle  Norrkoping   Stockholm     Uppsala    Vasteras      Orebro
+
+s1.Arboga       437.889                                          32.593       7.374      96.335
+s1.Fagersta                             536.069                            1463.931
+s1.Ludvika                  595.150     486.961
+s1.Nykoping                                        1482.849    3517.151
+s2.Arboga       531.610                                                      34.415                   8.167
+s2.Fagersta                             479.977                            1520.023
+s2.Ludvika                  476.760     528.160
+s2.Nykoping                                        1407.195    3540.363
+s3.Arboga       515.614                                                                              79.150
+s3.Fagersta                             470.078                            1512.173      17.749
+s3.Ludvika                  540.468     519.248
+s3.Nykoping                                        1567.754    3606.884
+s4.Arboga       588.615                                                                              68.892
+s4.Fagersta                             455.592                            1499.535      44.873
+s4.Ludvika                  487.199     636.686
+s4.Nykoping                                        1474.932    3581.948
+s5.Arboga       473.333                                                                             100.859
+s5.Fagersta                             299.253                            1528.651     172.096
+s5.Ludvika                  431.234     659.527
+s5.Nykoping                                        1526.230    3473.770
+s6.Arboga       499.117                                                                  36.621      38.454
+s6.Fagersta                             520.265                            1450.235      29.500
+s6.Ludvika                  500.810     424.103
+s6.Nykoping                                        1500.635    3657.020
+
+
+----     99 PARAMETER s_ex  extra waste to destruction per scenario
+
+        Arboga    Nykoping
+
+s3      20.571     174.638
+s4      83.316      56.879
+s6                 157.655
+
+GAMS 25.0.1  r65189 Released Jan 17, 2018 LEX-LEG x86 64bit/Linux                                                                                                                                                                     02/14/18 22:13:15 Page 12
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----     99 VARIABLE x.L  waste lighter than upper limit
+
+          Eskilstuna       Falun       Gavle  Norrkoping   Stockholm     Uppsala    Vasteras      Orebro
+
+Arboga      1500.000                                        1500.000    1500.000     425.808    1500.000
+Fagersta                            1500.000                1500.000    1500.000    1500.000
+Ludvika                 1500.000    1500.000                 932.902    1500.000    1020.170     451.403
+Nykoping                                        1500.000    1500.000
+
+
+----     99 VARIABLE z.L                   =   977958.991  totalprofit
+
+**** REPORT FILE SUMMARY
+
+emp /home/hannah/Documents/gams-ex/project1/225a/empinfo.dat
+
+
+EXECUTION TIME       =        0.005 SECONDS      4 MB  25.0.1 r65189 LEX-LEG
+
+
+USER: GAMS Development Corporation, USA              G871201/0000CA-ANY
+      Free Demo, +1 202-342-0180, support@gams.com, www.gams.com DC0000
+
+
+**** FILE SUMMARY
+
+Input      /home/hannah/Documents/gams-ex/project1/project1_advanced.gms
+Output     /home/hannah/Documents/gams-ex/project1/project1_advanced.lst
